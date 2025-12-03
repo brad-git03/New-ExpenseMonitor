@@ -5,15 +5,15 @@ const MONTHLY_RECORDS_KEY = 'monitorApp_monthly_history';
 const CURRENT_CYCLE_MONTH_KEY = 'monitorApp_current_cycle_month';
 
 // --- Global State Variables (Updated) ---
-let categoryBudgets = {}; // Stores budgets: { "Administrative": 5000, "Rent / Lease": 15000, ... }
-let currentTransactions = []; 
-let monthlyRecords = []; 
+let categoryBudgets = {}; // Stores budgets: { "Administrative": 5000, "Sales / Revenue": 100000, ... }
+let currentTransactions = [];
+let monthlyRecords = [];
 let totalIncome = 0;
 let totalExpenses = 0;
-let netFlow = 0; 
-let totalBudget = 0; // Derived from summing categoryBudgets
+let netFlow = 0;
+let totalBudget = 0; // Derived from summing EXPENSE category budgets
 let currentView = 'current';
-let currentCycleMonth = new Date().toISOString().substring(0, 7); 
+let currentCycleMonth = new Date().toISOString().substring(0, 7);
 
 // --- Category Definitions (Retained) ---
 const INCOME_CATEGORIES = [
@@ -36,7 +36,7 @@ const ALL_CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
 const appContainer = document.getElementById('app-container');
 
 // ----------------------------------------------------------------------
-// --- Helper Functions (Updated) ---
+// --- Helper Functions (Retained) ---
 // ----------------------------------------------------------------------
 
 /**
@@ -57,7 +57,7 @@ const formatCurrency = (amount) => {
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
 
 /**
- * Loads data from localStorage. (Updated to load categoryBudgets)
+ * Loads data from localStorage. (Retained)
  */
 const loadData = () => {
     currentCycleMonth = localStorage.getItem(CURRENT_CYCLE_MONTH_KEY) || new Date().toISOString().substring(0, 7);
@@ -80,7 +80,7 @@ const loadData = () => {
             return rawData.map(t => ({
                 ...t,
                 amount: parseFloat(t.amount),
-                type: t.type || 'expense', 
+                type: t.type || 'expense',
                 category: t.category && ALL_CATEGORIES.includes(t.category) ? t.category : (t.type === 'income' ? 'Other Income' : 'Administrative'),
                 date: t.date || new Date().toISOString().split('T')[0],
                 createdAt: t.createdAt || new Date().toISOString()
@@ -96,7 +96,7 @@ const loadData = () => {
 };
 
 /**
- * Saves all current state data to localStorage. (Updated to save categoryBudgets)
+ * Saves all current state data to localStorage. (Retained)
  */
 const saveData = () => {
     localStorage.setItem(CATEGORY_BUDGETS_KEY, JSON.stringify(categoryBudgets)); // Save category budgets
@@ -115,7 +115,7 @@ const saveData = () => {
 };
 
 /**
- * Calculates total income, expenses, and net flow for the current cycle. (Updated to derive totalBudget)
+ * Calculates total income, expenses, and net flow for the current cycle. (Retained)
  */
 const calculateTotals = () => {
     totalIncome = currentTransactions
@@ -125,13 +125,13 @@ const calculateTotals = () => {
     totalExpenses = currentTransactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
-        
-    // NEW: Calculate Total Budget by summing up all category budgets
+
+    // Total Budget remains the sum of EXPENSE category budgets (for expense control)
     totalBudget = EXPENSE_CATEGORIES.reduce((sum, category) => sum + (categoryBudgets[category] || 0), 0);
-    
+
     // Total Budget Variance (Overall)
     const totalBudgetVariance = totalBudget - totalExpenses;
-    
+
     // Net Flow calculation: Total Income - Total Expenses
     netFlow = totalIncome - totalExpenses;
 
@@ -157,23 +157,23 @@ const calculateCategoryExpenses = () => {
         const spent = categorySummary[category] || 0;
         const budget = categoryBudgets[category] || 0;
         const variance = budget - spent;
-        
-        return { 
-            category, 
-            amountSpent: spent, 
-            budget: budget, 
-            variance: variance 
+
+        return {
+            category,
+            amountSpent: spent,
+            budget: budget,
+            variance: variance
         };
     }).sort((a, b) => b.amountSpent - a.amountSpent);
 };
 
 
 // ----------------------------------------------------------------------
-// --- Action Functions (New: saveCategoryBudgets) ---
+// --- Action Functions (Updated: saveCategoryBudgets) ---
 // ----------------------------------------------------------------------
 
 /**
- * NEW: Saves or updates category budgets from the form.
+ * UPDATED: Saves budgets for BOTH expense and income categories.
  */
 const saveCategoryBudgets = (event) => {
     event.preventDefault();
@@ -181,8 +181,12 @@ const saveCategoryBudgets = (event) => {
     let newBudgets = { ...categoryBudgets };
     let valid = true;
 
-    EXPENSE_CATEGORIES.forEach(category => {
-        const input = form.querySelector(`#budget-input-${category.replace(/[^a-zA-Z0-9]/g, '')}`);
+    // Combine all categories for processing the form inputs
+    const ALL_BUDGETABLE_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+
+    ALL_BUDGETABLE_CATEGORIES.forEach(category => {
+        const safeId = category.replace(/[^a-zA-Z0-9]/g, '');
+        const input = form.querySelector(`#budget-input-${safeId}`);
         if (input) {
             const amount = parseFloat(input.value) || 0;
             if (isNaN(amount) || amount < 0) {
@@ -214,15 +218,15 @@ const addTransaction = (event) => {
         alert("Please ensure all fields are valid: description, positive amount, date, and category.");
         return;
     }
-    
+
     // VALIDATION LOGIC (Retained)
     if (type === 'expense' && !EXPENSE_CATEGORIES.includes(category)) {
-         alert(`Error: Cannot log an EXPENSE with an INCOME category (${category}). Please select a valid Expense category.`);
-         return;
+        alert(`Error: Cannot log an EXPENSE with an INCOME category (${category}). Please select a valid Expense category.`);
+        return;
     }
     if (type === 'income' && !INCOME_CATEGORIES.includes(category)) {
-         alert(`Error: Cannot log an INCOME with an EXPENSE category (${category}). Please select a valid Income category.`);
-         return;
+        alert(`Error: Cannot log an INCOME with an EXPENSE category (${category}). Please select a valid Income category.`);
+        return;
     }
     // ----------------------------
 
@@ -241,10 +245,10 @@ const addTransaction = (event) => {
     // Reset form fields
     form.reset();
     form.querySelector('#transaction-date-input').value = new Date().toISOString().split('T')[0];
-    form.querySelector('#transaction-category-select').selectedIndex = 0; 
+    form.querySelector('#transaction-category-select').selectedIndex = 0;
     form.querySelector('input[name="transaction-type"][value="expense"]').checked = true;
-    
-    updateCategoryDropdown('expense'); 
+
+    updateCategoryDropdown('expense');
 
     renderApp();
 };
@@ -264,27 +268,44 @@ const finalizeMonth = () => {
         return;
     }
 
-    // Capture category budget variance at the time of archival
-    const categorySummaryArray = calculateCategoryExpenses();
-    const categorySummaryObject = categorySummaryArray.reduce((acc, item) => {
-        // Only store budget, spent, and variance, indexed by category
-        acc[item.category] = {
+    // Capture category budget variance and actual income vs. forecast at the time of archival
+    const categorySummaryArray = calculateCategoryExpenses(); // Expenses
+
+    // Include Income forecasts in the summary object
+    const finalSummary = {};
+
+    // Process Expense Budgets/Spending
+    categorySummaryArray.forEach(item => {
+        finalSummary[item.category] = {
             budget: item.budget,
             spent: item.amountSpent,
             variance: item.variance
         };
-        return acc;
-    }, {});
+    });
+
+    // Process Income Forecasts/Actuals
+    INCOME_CATEGORIES.forEach(category => {
+        const forecast = categoryBudgets[category] || 0;
+        const actual = currentTransactions
+            .filter(t => t.type === 'income' && t.category === category)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        finalSummary[category] = {
+            forecast: forecast,
+            actual: actual,
+            variance: actual - forecast // Income variance (Actual - Forecast)
+        };
+    });
 
 
     const newRecord = {
         id: generateId(),
         month: currentCycleMonth,
-        startingBudget: finalBudget, // Save the aggregate budget
+        startingBudget: finalBudget, // Aggregate expense budget
         totalIncome: finalIncome,
         totalExpenses: finalExpenses,
         netFlow: finalNetFlow,
-        categorySummary: categorySummaryObject, // Now stores detailed budget/spent/variance
+        categorySummary: finalSummary, // Now stores combined income/expense data
         transactions: [...currentTransactions]
     };
 
@@ -328,7 +349,7 @@ const updateCategoryDropdown = (type) => {
         categoriesToDisplay = INCOME_CATEGORIES;
         optgroupLabel = 'INCOME Categories';
         categoryType = 'income';
-    } else { 
+    } else {
         categoriesToDisplay = EXPENSE_CATEGORIES;
         optgroupLabel = 'EXPENSE Categories';
         categoryType = 'expense';
@@ -358,13 +379,13 @@ const setupTransactionTypeListener = () => {
             updateCategoryDropdown(event.target.value);
         });
     });
-    
+
     updateCategoryDropdown(document.querySelector('input[name="transaction-type"]:checked').value);
 };
 
 
 /**
- * Renders a horizontal bar graph showing Total Budget vs. Total Expenses. (Updated Logic)
+ * Renders a horizontal bar graph showing Total Budget vs. Total Expenses. (Retained)
  */
 const renderBudgetVisualization = () => {
     const { totalExpenses: exp, totalBudget: budget, totalBudgetVariance: variance } = calculateTotals();
@@ -391,14 +412,14 @@ const renderBudgetVisualization = () => {
     const overColor = 'var(--primary-orange)';
     const remainingColor = 'var(--income-color)';
 
-    const varianceLabel = isOver 
+    const varianceLabel = isOver
         ? `<span style="color: ${overColor}; font-weight: 700;">- ${formatCurrency(overspentAmount)} OVER BUDGET</span>`
         : `<span style="color: ${remainingColor}; font-weight: 700;">${formatCurrency(remainingAmount)} REMAINING</span>`;
-    
+
     // 3. Build HTML Markup for the Horizontal Bar Chart
     let barMarkup;
     if (isOver) {
-         // If over budget, show a full bar for budget
+        // If over budget, show a full bar for budget
         barMarkup = `
             <div style="height: 20px; background-color: ${spentColor}; width: 100%; border-radius: 4px; position: relative;">
                  <span style="
@@ -433,6 +454,7 @@ const renderBudgetVisualization = () => {
                 <span style="
                     position: absolute; 
                     top: 50%; 
+                    /* Position text near the end of the bar, but ensuring visibility */
                     left: ${Math.max(10, normalizedSpent.toFixed(1) - 5)}%; 
                     transform: translateY(-50%); 
                     font-size: 0.8rem; 
@@ -451,8 +473,8 @@ const renderBudgetVisualization = () => {
     return `
         <div style="display: flex; flex-direction: column; width: 100%; padding: 12px 0;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 0.9rem; font-weight: 600; margin-right: 10px;">Total Expenses: ${formatCurrency(exp)}</span>
                 <span style="font-size: 0.9rem; font-weight: 600;">Total Budget: ${formatCurrency(monthlyBudgetDisplay)}</span>
-                <span style="font-size: 0.9rem; font-weight: 600;">Total Expenses: ${formatCurrency(exp)}</span>
             </div>
 
             ${barMarkup}
@@ -466,66 +488,105 @@ const renderBudgetVisualization = () => {
 
 
 /**
- * Renders the Category Budget Setter card. (NEW)
+ * UPDATED: Renders the Category Budget Setter card with Income Forecasts.
  */
 const renderCategoryBudgetSetter = (isEditing = false) => {
     const container = document.getElementById('budget-setter-card');
     if (!container) return;
-    
-    const { totalBudget } = calculateTotals();
+
+    const { totalBudget, totalIncome } = calculateTotals();
     const totalBudgetDisplay = formatCurrency(totalBudget);
 
-    if (isEditing) {
-        const inputFields = EXPENSE_CATEGORIES.map(category => {
+    // Helper function to render input fields for a category list
+    const renderCategoryInputs = (categoryList, type) => {
+        return categoryList.map(category => {
             const safeId = category.replace(/[^a-zA-Z0-9]/g, '');
             const currentValue = categoryBudgets[category] !== undefined ? categoryBudgets[category].toFixed(2) : '0.00';
-            
+            const color = type === 'Income' ? 'var(--income-color)' : 'var(--primary-orange)';
+
             return `
                 <div style="margin-bottom: 12px;">
-                    <label style="font-size: 0.9rem; display: block; margin-bottom: 4px; font-weight: 600;">${category}</label>
+                    <label style="font-size: 0.9rem; display: block; margin-bottom: 4px; font-weight: 600; color: ${color};">${category}</label>
                     <input type="number" id="budget-input-${safeId}" 
-                           placeholder="Budget for ${category}" 
+                           placeholder="${type} for ${category}" 
                            value="${currentValue}" 
                            min="0" step="0.01" required />
                 </div>
             `;
         }).join('');
+    };
+
+    if (isEditing) {
+        const expenseInputs = renderCategoryInputs(EXPENSE_CATEGORIES, 'Budget');
+        const incomeInputs = renderCategoryInputs(INCOME_CATEGORIES, 'Forecast');
 
         container.innerHTML = `
             <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; border-bottom: 1px solid var(--olive-tint); padding-bottom: 8px;">
-                Set Category Budgets
+                Set Financial Goals
             </h2>
             <form id="set-budget-form">
-                <div style="max-height: 250px; overflow-y: auto; padding-right: 10px; margin-bottom: 16px;">
-                    ${inputFields}
+                <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                    
+                    <h3 style="font-size: 1.1rem; color: var(--success-complement); margin-top: 0;">Income Forecasts</h3>
+                    ${incomeInputs}
+                    
+                    <h3 style="font-size: 1.1rem; color: var(--primary-orange); margin-top: 20px; border-top: 1px dashed var(--olive-tint); padding-top: 10px;">Expense Budgets</h3>
+                    ${expenseInputs}
+
                 </div>
-                <button type="submit" class="btn btn-success" style="width: 100%;">Save All Budgets</button>
+                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 16px;">Save All Goals</button>
             </form>
         `;
         document.getElementById('set-budget-form').addEventListener('submit', saveCategoryBudgets);
-        
+
     } else {
         // Read-only view
-        const budgetList = EXPENSE_CATEGORIES.map(category => {
-            const budget = categoryBudgets[category] || 0;
-            return `
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; padding: 4px 0; border-bottom: 1px dashed var(--olive-tint);">
-                    <span>${category}</span>
-                    <span style="font-weight:bold;">${formatCurrency(budget)}</span>
-                </div>
-            `;
-        }).join('');
-        
+        const renderReadonlyList = (categoryList, type) => {
+            const isIncome = type === 'Income';
+            const color = isIncome ? 'var(--income-color)' : 'var(--primary-orange)';
+
+            return categoryList.map(category => {
+                const budget = categoryBudgets[category] || 0;
+                const actual = currentTransactions
+                    .filter(t => t.type === (isIncome ? 'income' : 'expense') && t.category === category)
+                    .reduce((sum, t) => sum + t.amount, 0);
+
+                const label = isIncome ? 'Forecast' : 'Budget';
+                const actualLabel = isIncome ? 'Actual' : 'Spent';
+
+                // Variance calculation: Income (Actual - Forecast); Expense (Budget - Spent)
+                const variance = isIncome ? (actual - budget) : (budget - actual);
+                const isPositiveVariance = variance >= 0;
+                const varianceColor = isPositiveVariance ? 'var(--success-complement)' : 'var(--primary-orange)';
+                const varianceText = `${isPositiveVariance ? '+' : '-'}${formatCurrency(variance)}`;
+
+                return `
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; font-size:0.9rem; padding: 4px 0; border-bottom: 1px dashed var(--olive-tint);">
+                        <span style="font-weight: 600;">${category}</span>
+                        <span style="font-weight:bold; color: ${color};">${label}: ${formatCurrency(budget)}</span>
+                        <span style="color: ${varianceColor};">${varianceText}</span>
+                    </div>
+                `;
+            }).join('');
+        };
+
         container.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <h2 style="font-size: 0.9rem; opacity:0.7; margin-bottom:4px;">TOTAL MONTHLY BUDGET</h2>
+                    <h2 style="font-size: 0.9rem; opacity:0.7; margin-bottom:4px;">TOTAL EXPENSE BUDGET</h2>
                     <div style="font-size: 1.5rem; font-weight:bold; color:var(--primary-orange);">${totalBudgetDisplay}</div>
                 </div>
-                <button id="edit-budget-btn" class="btn btn-primary">Edit</button>
+                <button id="edit-budget-btn" class="btn btn-primary">Edit Goals</button>
             </div>
-            <div style="margin-top: 15px; max-height: 150px; overflow-y: auto;">
-                ${budgetList}
+            
+            <h3 style="font-size: 1rem; color: var(--success-complement); margin-top: 15px;">Income Forecasts</h3>
+            <div style="max-height: 120px; overflow-y: auto;">
+                ${renderReadonlyList(INCOME_CATEGORIES, 'Income')}
+            </div>
+
+            <h3 style="font-size: 1rem; color: var(--primary-orange); margin-top: 15px; border-top: 1px dashed var(--olive-tint); padding-top: 10px;">Expense Budgets</h3>
+            <div style="max-height: 150px; overflow-y: auto;">
+                ${renderReadonlyList(EXPENSE_CATEGORIES, 'Expense')}
             </div>
         `;
         document.getElementById('edit-budget-btn').addEventListener('click', () => renderCategoryBudgetSetter(true));
@@ -534,13 +595,13 @@ const renderCategoryBudgetSetter = (isEditing = false) => {
 
 
 /**
- * Renders the horizontal bar chart for category expenses. (Updated to include budget and variance)
+ * Renders the horizontal bar chart for category expenses. (Retained)
  */
 const renderCategoryBreakdownChart = () => {
     const sortedExpenses = calculateCategoryExpenses();
     const totalBudget = calculateTotals().totalBudget; // Overall Total Budget Display
 
-    if (sortedExpenses.length === 0 || totalBudget === 0) {
+    if (sortedExpenses.length === 0 && totalBudget === 0) {
         return `
             <div style="text-align: center; padding: 24px; color: var(--subtle-gray); opacity: 0.7;">
                 <p>Set category budgets and log expenses to see the breakdown.</p>
@@ -550,25 +611,25 @@ const renderCategoryBreakdownChart = () => {
 
     const chartBars = sortedExpenses.map(item => {
         const { category, amountSpent, budget, variance } = item;
-        
+
         // 1. Calculate bar width relative to the CATEGORY's budget
         const spentPercentageOfBudget = budget > 0 ? (amountSpent / budget) * 100 : (amountSpent > 0 ? 100 : 0);
         const normalizedSpent = Math.min(100, spentPercentageOfBudget);
-        
+
         // 2. Determine variance display
         const isOverspent = variance < 0;
-        const varianceText = isOverspent ? 
+        const varianceText = isOverspent ?
             `<span style="color: var(--primary-orange);">- ${formatCurrency(variance)} Over</span>` :
             `<span style="color: var(--success-complement);">${formatCurrency(variance)} Left</span>`;
 
         // 3. Determine bar color
         const spentColor = isOverspent ? 'var(--primary-orange)' : 'var(--expense-color)';
-        
+
         // If over budget, the bar represents 100% of the category budget, but the background highlights it's 100% full.
         const barWidth = isOverspent ? '100%' : `${normalizedSpent.toFixed(1)}%`;
         const barContainerBg = isOverspent ? 'var(--primary-orange)' : 'var(--olive-tint)';
         const barActualFill = isOverspent ? 'var(--hover-orange)' : spentColor;
-        
+
         return `
             <div style="margin-bottom: 18px;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
@@ -607,106 +668,17 @@ const renderCategoryBreakdownChart = () => {
 
 
 /**
- * Renders the SVG Donut Chart for category expenses. (Updated to use derived category data)
+ * Renders the SVG Donut Chart for category expenses. (Retained)
  */
 const renderCategoryDonutChart = () => {
-    const sortedExpenses = calculateCategoryExpenses().filter(item => item.amountSpent > 0);
-    const totalExpensesValue = totalExpenses;
-
-    if (totalExpensesValue === 0) {
-        return `
-            <div style="text-align: center; padding: 24px; height: 100%;">
-                <p style="color: var(--subtle-gray); opacity: 0.8; margin-top: 50px;">Log expenses to see category proportion.</p>
-            </div>
-        `;
-    }
-    
-    // Simple color palette for the slices
-    const chartColors = [
-        '#FBA002', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-        '#9966FF', '#FF9F40', '#E7E9ED', '#4D5360', '#6A5ACD'
-    ];
-
-    const radius = 50;
-    const center = 50;
-    const circumference = 2 * Math.PI * radius;
-    let cumulativePercent = 0;
-
-    const slices = sortedExpenses.slice(0, 7).map((item, index) => {
-        const percent = item.amountSpent / totalExpensesValue;
-        const segmentLength = percent * circumference;
-        const dashoffset = circumference - (cumulativePercent * circumference);
-        const color = chartColors[index % chartColors.length];
-        
-        cumulativePercent += percent;
-
-        // Path is rotated based on the previous segments
-        return `
-            <circle cx="${center}" cy="${center}" r="${radius}" fill="transparent" stroke="${color}" stroke-width="20"
-                stroke-dasharray="${segmentLength} ${circumference}"
-                stroke-dashoffset="${dashoffset}"
-                style="transform: rotate(-90deg); transform-origin: ${center}px ${center}px;"
-                title="${item.category}: ${percent.toFixed(2) * 100}%" />
-        `;
-    }).join('');
-
-    const legend = sortedExpenses.slice(0, 7).map((item, index) => `
-        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-            <span style="width: 10px; height: 10px; background-color: ${chartColors[index % chartColors.length]}; border-radius: 50%; margin-right: 8px;"></span>
-            <span style="font-size: 0.85rem; color: var(--light-text);">${item.category}: ${(item.amountSpent / totalExpensesValue * 100).toFixed(1)}%</span>
-        </div>
-    `).join('');
-    
-    // Calculate 'Other' category if there are more than 7 categories
-    let otherSlice = '';
-    if (sortedExpenses.length > 7) {
-        const otherAmount = sortedExpenses.slice(7).reduce((sum, item) => sum + item.amountSpent, 0);
-        const otherPercent = otherAmount / totalExpensesValue;
-        const otherColor = chartColors[7];
-        
-        const segmentLength = otherPercent * circumference;
-        const dashoffset = circumference - (cumulativePercent * circumference);
-
-        otherSlice = `
-            <circle cx="${center}" cy="${center}" r="${radius}" fill="transparent" stroke="${otherColor}" stroke-width="20"
-                stroke-dasharray="${segmentLength} ${circumference}"
-                stroke-dashoffset="${dashoffset}"
-                style="transform: rotate(-90deg); transform-origin: ${center}px ${center}px;"
-                title="Other: ${otherPercent.toFixed(2) * 100}%" />
-        `;
-
-        legend += `
-            <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                <span style="width: 10px; height: 10px; background-color: ${otherColor}; border-radius: 50%; margin-right: 8px;"></span>
-                <span style="font-size: 0.85rem; color: var(--light-text);">Other: ${(otherPercent * 100).toFixed(1)}%</span>
-            </div>
-        `;
-    }
-
-
-    return `
-        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 20px; width: 100%; flex-wrap: wrap;">
-            <div style="width: 150px; height: 150px; flex-shrink: 0;">
-                <svg viewBox="0 0 100 100" width="100%" height="100%">
-                    <circle cx="${center}" cy="${center}" r="${radius}" fill="transparent" stroke="var(--olive-tint)" stroke-width="20" />
-                    ${slices}
-                    ${otherSlice}
-                    <text x="${center}" y="${center + 5}" text-anchor="middle" dominant-baseline="middle" style="font-size: 10px; font-weight: 800; fill: var(--white-text);">
-                        ${formatCurrency(totalExpensesValue)}
-                    </text>
-                </svg>
-            </div>
-            <div style="padding: 10px; max-width: 50%; min-width: 150px;">
-                <h4 style="margin-top: 0; color: var(--primary-orange);">Top Expense Categories</h4>
-                ${legend}
-            </div>
-        </div>
-    `;
+    // This chart logic is redundant and has been removed as per a previous request.
+    // Keeping this function stub just in case it was referenced elsewhere, but leaving it empty.
+    return '';
 };
 
 
 /**
- * Main render function to update the entire application UI structure. (Updated to use totalBudget)
+ * Main render function to update the entire application UI structure. (Retained)
  */
 const renderApp = () => {
     const { totalIncome: inc, totalExpenses: exp, netFlow: flow, totalBudget: budget } = calculateTotals();
@@ -731,27 +703,27 @@ const renderApp = () => {
             </div>
             <div id="summary-grid">
                 <div class="summary-item budget-item">
-                    <h2>TOTAL MONTHLY BUDGET</h2>
+                    <h2>TOTAL EXPENSE BUDGET</h2>
                     <p id="total-budget-display">
                         ${formatCurrency(budget)}
                     </p>
                 </div>
                 <div class="summary-item income-item-summary">
-                    <h2>TOTAL INCOME</h2>
+                    <h2>TOTAL INCOME ACTUALS</h2>
                     <p id="total-income-display">
                         ${formatCurrency(inc)}
                     </p>
                 </div>
                 <div class="summary-item expense-item-summary">
-                    <h2>TOTAL EXPENSES</h2>
+                    <h2>TOTAL EXPENSES ACTUALS</h2>
                     <p id="total-expenses-display">
                         ${formatCurrency(exp)}
                     </p>
                 </div>
                 <div class="summary-item ${isOverBudget ? 'net-flow-negative-item' : 'net-flow-positive-item'}">
-                    <h2>BUDGET REMAINING</h2>
+                    <h2>NET FLOW (I - E)</h2>
                     <p id="net-flow-display">
-                        ${isOverBudget ? '-' : ''}${formatCurrency(totalBudgetVariance)}
+                        ${isNetFlowPositive ? '' : '-'}${formatCurrency(flow)}
                     </p>
                 </div>
             </div>
@@ -800,19 +772,19 @@ const renderActiveView = () => {
         // Attach logic
         document.getElementById('set-cycle-month-btn').addEventListener('click', setCycleMonth);
         // Renders the Category Budget Setter
-        renderCategoryBudgetSetter(false); 
+        renderCategoryBudgetSetter(false);
         document.getElementById('add-transaction-form').addEventListener('submit', addTransaction);
-        
+
         // Default to today's date
         document.getElementById('transaction-date-input').value = new Date().toISOString().split('T')[0];
 
         document.getElementById('finalize-month-btn').addEventListener('click', finalizeMonth);
-        
+
         // Render the charts and transaction list
-        document.getElementById('category-breakdown-container').innerHTML = renderCategoryBreakdownChart(); 
-        
-        setupTransactionTypeListener(); 
-        
+        document.getElementById('category-breakdown-container').innerHTML = renderCategoryBreakdownChart();
+
+        setupTransactionTypeListener();
+
         renderTransactionHistory();
 
     } else {
@@ -832,7 +804,7 @@ const setCycleMonth = () => {
     }
 };
 
-// --- Current Month Dashboard Components (Updated) ---
+// --- Current Month Dashboard Components (Retained) ---
 
 const renderCurrentMonthManager = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -929,6 +901,195 @@ const renderCurrentMonthManager = () => {
                 </section>
 
             </div>
+        </div>
+    `;
+};
+
+const renderBudgetSetter = (isEditing = false) => {
+    const container = document.getElementById('budget-setter-card');
+    if (!container) return;
+
+    const currentBudgetDisplay = formatCurrency(monthlyBudget);
+
+    if (isEditing) {
+        container.innerHTML = `
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; border-bottom: 1px solid var(--olive-tint); padding-bottom: 8px;">
+                Set/Update Monthly Budget
+            </h2>
+            <div style="display: flex; gap: 8px;">
+                <input type="number" id="new-budget-input" placeholder="Enter New Budget Amount" value="${monthlyBudget.toFixed(2)}"
+                    min="0" step="0.01" style="flex-grow: 1;" required />
+                <button id="save-budget-btn" class="btn btn-success">Save</button>
+            </div>
+        `;
+        document.getElementById('save-budget-btn').addEventListener('click', saveMonthlyBudget);
+    } else {
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 style="font-size: 0.9rem; opacity:0.7; margin-bottom:4px;">Current Monthly Expense Budget</h2>
+                    <div style="font-size: 1.5rem; font-weight:bold; color:var(--primary-orange);">${currentBudgetDisplay}</div>
+                </div>
+                <button id="edit-budget-btn" class="btn btn-primary">Edit</button>
+            </div>
+        `;
+        document.getElementById('edit-budget-btn').addEventListener('click', () => renderBudgetSetter(true));
+    }
+};
+
+const renderTransactionHistory = () => {
+    const container = document.getElementById('history-list-container');
+    if (!container) return;
+
+    if (currentTransactions.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 24px; color: var(--subtle-gray); opacity: 0.7;">
+                <p>No transactions logged for this month yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Group transactions by date for better viewing
+    const transactionsByDate = currentTransactions.reduce((acc, t) => {
+        const date = t.date;
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(t);
+        return acc;
+    }, {});
+
+    const sortedDates = Object.keys(transactionsByDate).sort((a, b) => new Date(b) - new Date(a));
+
+    container.innerHTML = sortedDates.map(date => {
+        const displayDate = new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const dateTransactions = transactionsByDate[date].map(item => {
+            const isIncome = item.type === 'income';
+            const amountClass = isIncome ? 'income-amount' : 'expense-amount';
+            const sign = isIncome ? '+' : '-';
+            const icon = isIncome ? '<i class="bi bi-arrow-up-circle-fill"></i>' : '<i class="bi bi-arrow-down-circle-fill"></i>';
+
+            return `
+                <div class="transaction-item ${item.type}" style="border-left-width: 6px;">
+                    <div class="transaction-item-details">
+                        <strong>${item.description}</strong>
+                        <small>${item.category} | ${new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+                    </div>
+                    <div class="transaction-amount-actions" style="display:flex; align-items:center; gap:12px;">
+                        ${icon}
+                        <span class="amount ${amountClass}">${sign} ${formatCurrency(item.amount)}</span>
+                        <button class="delete-btn" onclick="deleteTransaction('${item.id}')" title="Delete Entry">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div style="margin-bottom: 16px;">
+                <h4 style="margin: 0; padding: 8px 0; border-bottom: 1px dashed var(--olive-tint); font-size: 1rem; color: var(--light-text);">
+                    ${displayDate}
+                </h4>
+                ${dateTransactions}
+            </div>
+        `;
+    }).join('');
+};
+
+
+const renderMonthlyHistory = () => {
+    if (monthlyRecords.length === 0) {
+        return `
+            <div class="card" style="text-align: center; padding: 40px;">
+                <h3 style="color: var(--light-text);">No Monthly Archive Records Found</h3>
+                <p style="opacity: 0.7;">Finalize a month's cycle to see it appear in your history.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card" id="history-archive-card">
+            ${monthlyRecords.map(record => {
+        const isDeficit = record.netFlow < 0;
+        const displayMonth = new Date(record.month + '-01').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+        // Format category summary for display
+        const categoryList = Object.entries(record.categorySummary || {})
+            .sort(([, a], [, b]) => (b.spent || b.actual || 0) - (a.spent || a.actual || 0)) // Sort by spent/actual amount descending
+            .map(([category, data]) => {
+                const isExpense = EXPENSE_CATEGORIES.includes(category);
+                const isIncome = INCOME_CATEGORIES.includes(category);
+
+                let budgetOrForecast = 0;
+                let actualOrSpent = 0;
+                let varianceText = '';
+                let varianceColor = '';
+
+                if (isExpense) {
+                    budgetOrForecast = data.budget || 0;
+                    actualOrSpent = data.spent || 0;
+                    const variance = data.variance || 0;
+                    varianceColor = variance >= 0 ? 'var(--success-complement)' : 'var(--primary-orange)';
+                    varianceText = `${variance >= 0 ? '+' : '-'}${formatCurrency(variance)} ${variance >= 0 ? 'Saved' : 'Over'}`;
+                } else if (isIncome) {
+                    budgetOrForecast = data.forecast || 0;
+                    actualOrSpent = data.actual || 0;
+                    const variance = data.variance || 0;
+                    varianceColor = variance >= 0 ? 'var(--success-complement)' : 'var(--primary-orange)';
+                    varianceText = `${variance >= 0 ? '+' : '-'}${formatCurrency(variance)} ${variance >= 0 ? 'Above Forecast' : 'Below Forecast'}`;
+                } else {
+                    return ''; // Skip if not recognized (shouldn't happen with validation)
+                }
+
+                const typeLabel = isIncome ? 'Forecast' : 'Budget';
+                const actualLabel = isIncome ? 'Actual' : 'Spent';
+
+
+                return `
+                            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; font-size:0.85rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                <span>${category} (${actualLabel}: ${formatCurrency(actualOrSpent)})</span>
+                                <span style="font-weight: 600;">${typeLabel}: ${formatCurrency(budgetOrForecast)}</span>
+                                <span style="color: ${varianceColor}; font-weight: 700;">${varianceText}</span>
+                            </div>
+                        `;
+            }).join('');
+
+
+        return `
+                    <div class="history-record ${isDeficit ? 'deficit' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <h3 style="margin:0; font-size:1.2rem;"><i class="bi bi-calendar-event" style="font-size:1.2rem; padding-right: 8px;"></i>${displayMonth}</h3>
+                            <span style="font-weight:bold; font-size:1rem; color:${isDeficit ? 'var(--expense-color)' : 'var(--income-color)'};">
+                                Net Flow: ${isDeficit ? '-' : ''}${formatCurrency(record.netFlow)}
+                            </span>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; font-size:0.9rem; margin-bottom:12px;">
+                            <div>Total Budget: <strong style="color: var(--primary-orange);">${formatCurrency(record.startingBudget)}</strong></div>
+                            <div>Total Income: <strong style="color: var(--income-color);">${formatCurrency(record.totalIncome)}</strong></div>
+                            <div>Total Expenses: <strong style="color: var(--expense-color);">${formatCurrency(record.totalExpenses)}</strong></div>
+                        </div>
+                        <details>
+                            <summary style="cursor:pointer; color:var(--primary-orange); font-size:0.9rem; font-weight:600;">View Budget & Actual Summary</summary>
+                            <div style="margin-top:12px; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+                                ${categoryList}
+                            </div>
+                        </details>
+                        <details style="margin-top: 10px;">
+                             <summary style="cursor:pointer; color:var(--primary-orange); font-size:0.9rem; font-weight:600;">View ${record.transactions.length} Total Transactions</summary>
+                             <div style="margin-top:12px; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px;">
+                                 ${record.transactions.map(t => `
+                                     <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.85rem;">
+                                         <span style="color: ${t.type === 'income' ? 'var(--income-color)' : 'var(--expense-color)'};">[${t.type.toUpperCase()}]</span>
+                                         <span>${t.description} (${t.category})</span>
+                                         <span>${formatCurrency(t.amount)}</span>
+                                     </div>
+                                 `).join('')}
+                             </div>
+                        </details>
+                    </div>
+                    `;
+    }).join('')}
         </div>
     `;
 };
