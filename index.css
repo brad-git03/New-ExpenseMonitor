@@ -1,338 +1,415 @@
-/* --- Color Palette Variables (Retained) --- */
+/* === Financial System Design === */
 :root {
-    --primary-orange: #FBA002; /* Bright Orange Accent (Expense/Warning) */
-    --dark-olive: #42533e; /* Deep Background */
-    --dark-background: #252A23; /* Even darker background for cards/dashboard sections */
-    --hover-orange: #e59002;
-    --subtle-gray: #e5e7eb; /* Light Gray for borders/dividers */
-    --success-complement: #20d120; /* Sage Green for positive balance/Income */
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --primary-orange: #1e40af;
+    --success: #059669;
+    --success-light: #10b981;
+    --success-complement: #059669;
+    --danger: #dc2626;
+    --danger-light: #ef4444;
+    --warning: #d97706;
     
-    /* Tints and Text on Dark Background */
-    --olive-tint: #4A5649; /* Secondary Dark Container background */
-    --light-olive-tint: #5C675B; /* Tertiary Dark background for inputs/buttons */
-    --orange-tint: #FFF3E0; /* Lighter orange tint */
-    --white-text: #ffffff; 
-    --light-text: #e0e0e0; 
-    --box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Stronger shadow for dark background */
-
-    /* New colors for Expense Monitor */
-    --income-color: var(--success-complement);
-    --expense-color: var(--primary-orange);
-    --net-flow-positive: var(--success-complement);
-    --net-flow-negative: var(--primary-orange);
+    --bg-base: #ffffff;
+    --bg-surface: #f9fafb;
+    --bg-elevated: #f3f4f6;
+    
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --light-text: #ffffff;
+    
+    --border: #e5e7eb;
+    --border-light: #f3f4f6;
+    
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    
+    --income-color: #059669;
+    --expense-color: #dc2626;
+    --olive-tint: #e5e7eb;
 }
 
-/* Reset and General Setup (Retained) */
 * {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--dark-olive); /* Deep Olive for body background */
-    color: var(--light-text); /* Light text on dark background */
-    margin: 0;
-    padding: 20px 10px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 20px;
+    min-height: 100vh;
 }
 
 #app-container {
-    max-width: 1200px; /* Wider for dashboard feel */
+    max-width: 1400px;
     margin: 0 auto;
 }
 
-/* --- Global Card Styling (Retained) --- */
-.card {
-    background-color: var(--dark-background); 
-    padding: 24px;
-    border-radius: 16px; /* Smoother corners */
-    box-shadow: var(--box-shadow);
-    margin-bottom: 24px;
-    color: var(--light-text); 
-    transition: background-color 0.3s;
-}
-
+/* Header */
 .app-header {
-    font-size: 2rem; 
-    font-weight: 800; 
-    color: var(--white-text); 
-    display: flex; 
-    align-items: center; 
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
     margin-bottom: 32px;
+    letter-spacing: -0.025em;
 }
 
 .app-header span {
-    color: var(--primary-orange) !important; 
+    color: var(--primary);
 }
 
-/* --- Summary Section (Retained) --- */
+/* Card System */
+.card {
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-xs);
+}
+
+/* Summary Section */
 #summary-section {
-    background-color: var(--dark-background); 
-    display: flex; 
-    flex-direction: column; 
+    background: var(--bg-base);
+    display: flex;
+    flex-direction: column;
     gap: 24px;
     padding: 24px;
 }
 
-/* Tabs Styling (Retained) */
-#tab-bar {
+#visualization-container {
     display: flex;
-    margin-bottom: 24px;
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: var(--dark-background); 
-    box-shadow: var(--box-shadow);
+    justify-content: center;
+    align-items: center;
 }
 
-.tab-btn {
-    flex-grow: 1;
-    padding: 14px 0;
-    text-align: center;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    background-color: transparent;
-    color: var(--light-text); 
-    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
-
-.tab-btn.active {
-    background-color: var(--primary-orange); 
-    color: var(--dark-olive); /* Dark text on orange */
-}
-
-.tab-btn:hover:not(.active) {
-    background-color: var(--olive-tint); 
-    color: var(--white-text);
-}
-
-/* Inputs and Buttons (Retained) */
-input[type="text"], input[type="number"], input[type="date"], select { /* Added select */
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--olive-tint);
-    border-radius: 8px;
-    transition: border-color 0.2s;
-    background-color: var(--light-olive-tint); /* Lighter dark background for input field */
-    color: var(--white-text); 
-}
-
-input::placeholder {
-    color: var(--light-text);
-    opacity: 0.6;
-}
-
-.btn {
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
-    border: none;
-}
-
-.btn-success {
-    background-color: var(--success-complement);
-    color: var(--white-text);
-}
-
-.btn-success:hover {
-    background-color: #5c6c24; 
-}
-
-.btn-primary {
-    background-color: var(--primary-orange);
-    color: var(--dark-olive);
-}
-
-.btn-primary:hover:not([disabled]) {
-    background-color: var(--hover-orange);
-}
-
-.btn-primary[disabled] {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-/* Summary Grid Items - Adapted for dark card background */
 #summary-grid {
-    width: 100%;
     display: grid;
-    /* Changed to 4 columns to include Income and Net Flow */
-    grid-template-columns: repeat(4, 1fr); 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
 }
 
 .summary-item {
-    padding: 16px;
-    border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--olive-tint);
-    overflow: hidden; 
+    padding: 20px;
+    border-radius: var(--radius);
+    background: var(--bg-base);
+    border: 1px solid var(--border);
 }
 
 .summary-item h2 {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--light-text);
-    opacity: 0.7;
-    margin-bottom: 4px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
 }
 
 .summary-item p {
-    font-size: 1.4rem; 
-    font-weight: 800;
-    margin-top: 0;
-}
-
-/* Color Coding for Summary (Updated for Net Flow) */
-.net-flow-positive-item {
-    color: var(--white-text);
-    border-left: 4px solid var(--net-flow-positive);
-}
-
-.net-flow-negative-item {
-    color: var(--white-text);
-    border-left: 4px solid var(--net-flow-negative);
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .budget-item {
-    color: var(--white-text);
+    background: #eff6ff;
+    border-color: #dbeafe;
 }
 
-.expense-item-summary {
-    color: var(--expense-color);
-    border-left: 4px solid var(--expense-color);
-}
+.budget-item h2 { color: var(--primary); }
+.budget-item p { color: var(--primary); }
 
 .income-item-summary {
-    color: var(--income-color);
-    border-left: 4px solid var(--income-color);
+    background: #ecfdf5;
+    border-color: #d1fae5;
 }
 
-/* Visualization (Retained) */
-#visualization-container {
-    display: flex; 
-    justify-content: center; 
-    align-items: center;
+.income-item-summary h2 { color: var(--success); }
+.income-item-summary p { color: var(--success); }
+
+.expense-item-summary {
+    background: #fef2f2;
+    border-color: #fecaca;
 }
 
-/* --- Dashboard Grid Structure for Current View (Retained) --- */
+.expense-item-summary h2 { color: var(--danger); }
+.expense-item-summary p { color: var(--danger); }
+
+.net-flow-positive-item {
+    background: #ecfdf5;
+    border-color: #d1fae5;
+}
+
+.net-flow-positive-item h2 { color: var(--success); }
+.net-flow-positive-item p { color: var(--success); }
+
+.net-flow-negative-item {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.net-flow-negative-item h2 { color: var(--danger); }
+.net-flow-negative-item p { color: var(--danger); }
+
+/* Tabs */
+#tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    padding: 4px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.tab-btn i {
+    margin-right: 6px;
+}
+
+.tab-btn.active {
+    background: var(--bg-base);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-btn:hover:not(.active) {
+    color: var(--text-primary);
+}
+
+/* Forms */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover:not([disabled]) {
+    background: var(--primary-light);
+}
+
+.btn-primary[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    background: var(--success-light);
+}
+
+/* Dashboard Grid */
 #current-dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr; /* Default to single column for mobile */
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 20px;
 }
 
-/* Transaction Item Styling (Updated to show type) */
+/* Transactions */
 .transaction-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
     margin-bottom: 8px;
-    background-color: var(--olive-tint); 
-    border-left: 4px solid var(--light-olive-tint);
-    border-radius: 8px;
-    color: var(--light-text);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
 }
 
 .transaction-item.income {
-    border-left-color: var(--income-color);
+    border-left: 3px solid var(--success);
 }
 
 .transaction-item.expense {
-    border-left-color: var(--expense-color);
+    border-left: 3px solid var(--danger);
 }
 
 .transaction-item-details strong {
     display: block;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
 }
 
 .transaction-item-details small {
-    color: var(--subtle-gray);
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
 }
 
-.transaction-amount-actions .amount { /* Added .amount class */
-     font-weight: 700;
-     flex-shrink: 0;
+.transaction-amount-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.transaction-amount-actions .amount {
+    font-weight: 600;
+    font-size: 0.875rem;
 }
 
 .transaction-amount-actions .income-amount {
-     color: var(--income-color);
+    color: var(--success);
 }
 
 .transaction-amount-actions .expense-amount {
-     color: var(--expense-color);
+    color: var(--danger);
 }
 
 .delete-btn {
-    color: var(--subtle-gray);
+    color: var(--text-tertiary);
     cursor: pointer;
-    font-size: 1.2rem;
-    padding: 4px;
-    background: none;
+    font-size: 1rem;
+    padding: 6px;
+    background: transparent;
     border: none;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
 }
 
 .delete-btn:hover {
-    color: var(--primary-orange);
+    color: var(--danger);
+    background: #fef2f2;
 }
 
-/* History Card Styles - Individual month records (Updated for Month) */
+/* History */
 .history-record {
     padding: 16px;
     margin-bottom: 12px;
-    border-radius: 8px;
-    background-color: var(--olive-tint); 
-    border-left: 6px solid var(--success-complement);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    cursor: pointer; 
+    border-radius: var(--radius);
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--success);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.history-record:hover {
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .history-record.deficit {
-    border-left: 6px solid var(--primary-orange); 
+    border-left: 3px solid var(--danger);
 }
 
-/* Desktop Layout (Dashboard View - Retained) */
-@media (min-width: 900px) {
-    #summary-section {
-        flex-direction: row; 
-    }
-    #visualization-container {
-        width: 250px; /* Adjusted width for a 4-column summary grid */
-        flex-shrink: 0;
-    }
+/* Responsive */
+@media (min-width: 768px) {
     #summary-grid {
-        width: calc(100% - 250px - 24px); /* Fills remaining space */
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    body {
+        padding: 32px;
     }
 
-    /* Dashboard Layout */
-    #current-dashboard-grid {
-        grid-template-columns: 2fr 1fr; /* Main content (forms/log) on left, actions on right */
-    }
-
-    /* Action/Settings Column */
-    #dashboard-actions-column {
-        grid-column: 2 / 3;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
+    #summary-section {
+        flex-direction: row;
+        align-items: center;
     }
     
-    /* Main Content Column */
-    #dashboard-main-column {
-        grid-column: 1 / 2;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
+    #visualization-container {
+        width: 240px;
+        flex-shrink: 0;
+    }
+    
+    #summary-grid {
+        flex: 1;
+        grid-template-columns: repeat(4, 1fr);
     }
 
-    /* History Archive Card (full width if history tab selected) */
-    #history-archive-card {
-        width: 100%;
+    #current-dashboard-grid {
+        grid-template-columns: 1.8fr 1fr;
     }
+
+    #dashboard-actions-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    #dashboard-main-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-elevated);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
 }

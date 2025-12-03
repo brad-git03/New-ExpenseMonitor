@@ -455,8 +455,8 @@ const renderSettings = (isEditing = false) => {
         container.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <h2 style="font-size: 0.9rem; opacity:0.7; margin-bottom:4px;">Entity: ${companyName}</h2>
-                    <div style="font-size: 1.5rem; font-weight:bold; color:var(--light-text);">${currentCycleLabel} Cycle</div>
+                    <h2 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom:4px;">Entity: ${companyName}</h2>
+                    <div style="font-size: 1.5rem; font-weight:bold; color:var(--text-primary);">${currentCycleLabel} Cycle</div>
                 </div>
                 <button id="edit-settings-btn" class="btn btn-primary">Edit</button>
             </div>
@@ -487,7 +487,7 @@ const updateCategoryDropdown = (type) => {
     }
 
     const optionsMarkup = categoriesToDisplay.map(cat => {
-        const color = categoryType === 'income' ? 'var(--income-color)' : 'var(--expense-color)';
+        const color = categoryType === 'income' ? 'var(--income-color)' : 'var(--text-primary)';
         return `<option value="${cat}" style="color: ${color};">${cat}</option>`;
     }).join('');
 
@@ -744,7 +744,7 @@ const renderCategoryBreakdownChart = () => {
             `<span style="color: var(--primary-orange);">- ${formatCurrency(variance)} Over</span>` :
             `<span style="color: var(--success-complement);">${formatCurrency(variance)} Left</span>`;
 
-        const spentColor = isOverspent ? 'var(--primary-orange)' : 'var(--expense-color)';
+        const spentColor = isOverspent ? 'var(--primary-orange)' : 'var(--text-primary)';
         
         const barWidth = isOverspent ? '100%' : `${normalizedSpent.toFixed(1)}%`;
         const barContainerBg = isOverspent ? 'var(--primary-orange)' : 'var(--olive-tint)';
@@ -976,8 +976,8 @@ const renderApp = () => {
 
     appContainer.innerHTML = `
         <h1 class="app-header">
-            <span style="font-size: 2rem; margin-right: 8px; font-weight: bold;"></span>
-            ${companyName} Expense Monitor (${cycleDisplay})
+            <span>${companyName}</span> Financial Dashboard
+            <span style="font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-left: 12px;">${cycleDisplay}</span>
         </h1>
         
         <section id="summary-section" class="card">
@@ -1173,11 +1173,11 @@ const renderCurrentCycleManager = () => {
                     </p>
                 </section>
 
-                <section class="card" id="finalize-card" style="background-color: var(--olive-tint);">
+                <section class="card" id="finalize-card">
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-orange); margin-bottom: 16px;">
                         Archive Cycle
                     </h2>
-                    <p style="font-size: 0.9rem; color: var(--light-text); margin-bottom: 12px;">
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">
                         Finalize and archive the current cycle (${displayCycle}). Next cycle starts ${nextCycleDisplay}.
                     </p>
                     <button id="finalize-cycle-btn" class="btn btn-primary" style="width: 100%;">
